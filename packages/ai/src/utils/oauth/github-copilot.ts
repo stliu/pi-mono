@@ -616,4 +616,16 @@ export const githubCopilotOAuthProvider: OAuthProviderInterface = {
 
 		return result;
 	},
+
+	async discoverModels(credentials: OAuthCredentials): Promise<OAuthCredentials | null> {
+		const creds = credentials as CopilotCredentials;
+		const discovered = await fetchCopilotModels(creds.access, creds.enterpriseUrl);
+		if (discovered.length === 0) return null;
+
+		return {
+			...creds,
+			discoveredModels: discovered,
+			discoveredModelsAt: Date.now(),
+		};
+	},
 };

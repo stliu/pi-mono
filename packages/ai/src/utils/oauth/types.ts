@@ -49,6 +49,13 @@ export interface OAuthProviderInterface {
 
 	/** Optional: modify models for this provider (e.g., update baseUrl) */
 	modifyModels?(models: Model<Api>[], credentials: OAuthCredentials): Model<Api>[];
+
+	/**
+	 * Optional: dynamically discover models from the provider's API.
+	 * Called when the user opens the model picker to ensure the catalog is fresh.
+	 * Returns updated credentials with discovered models stored on them.
+	 */
+	discoverModels?(credentials: OAuthCredentials): Promise<OAuthCredentials | null>;
 }
 
 /** @deprecated Use OAuthProviderInterface instead */

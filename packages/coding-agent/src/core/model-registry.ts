@@ -294,6 +294,39 @@ export class ModelRegistry {
 	}
 
 	/**
+	 * Async refresh that also runs model discovery for OAuth providers.
+	 * Call this when the user opens the model picker so newly available
+	 * models (e.g. from the Copilot API) are fetched and merged.
+	 */
+	async refreshWithDiscovery(): Promise<void> {
+		// First, run a normal sync refresh to load the latest state
+		this.refresh();
+
+		// Then ask each OAuth provider to discover models
+		let changed = false;
+		for (const oauthProvider of this.authStorage.getOAuthProviders()) {
+			if (!oauthProvider.discoverModels) continue;
+			const cred = this.authStorage.get(oauthProvider.id);
+			if (cred?.type !== "oauth") continue;
+
+			try {
+				const updated = await oauthProvider.discoverModels(cred);
+				if (updated) {
+					this.authStorage.set(oauthProvider.id, { type: "oauth", ...updated });
+					changed = true;
+				}
+			} catch {
+				// Non-fatal: discovery failure should not block the model picker
+			}
+		}
+
+		// Re-load models to pick up discovered models via modifyModels()
+		if (changed) {
+			this.refresh();
+		}
+	}
+
+	/**
 	 * Get any error from loading models.json (undefined if no error).
 	 */
 	getError(): string | undefined {
